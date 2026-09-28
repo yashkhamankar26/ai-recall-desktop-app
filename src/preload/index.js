@@ -1,8 +1,14 @@
-import { contextBridge } from 'electron'
+import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+   getObsidianNotes: (folderPath) => ipcRenderer.invoke('read-notes', folderPath),
+  // new function for folder path
+  selectFolder: () => ipcRenderer.invoke('select-folder'),
+  //new function for reading a files
+  readFileContent: (folderPath, fileName) => ipcRenderer.invoke('read-file-content', folderPath, fileName)
+}
 
 // Use `contextBridge` APIs to expose Electron APIs to
 // renderer only if context isolation is enabled, otherwise

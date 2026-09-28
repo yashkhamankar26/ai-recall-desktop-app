@@ -1,7 +1,8 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
+import fs from 'fs'
 
 function createWindow() {
   // Create the browser window.
@@ -47,6 +48,43 @@ app.whenReady().then(() => {
   // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
+  })
+
+  ipcMain.handle('read-notes', async (event, folderPath) => {
+    try {
+      const files = fs.readdirSync(folderPath)
+      // Sirf .md files filter krna hai
+      const mdFiles = files.filter((file) => file.endsWith('.md'))
+      return mdFiles
+    } catch (error) {
+      console.error("Folder read error:", error)
+      return []
+    }
+  })
+
+  ipcMain.handle('select-folder', async () => {
+    const { cancled, filePaths } = await dialog.showOpenDialog({
+      properties: ['openDirectory']
+    })
+
+    if (cancled) {
+      return null
+    } else {
+      return filePaths[0]
+    }
+  })
+
+  // new ipc handler for reading text fro the note 
+  ipcMain.handle('read-file-content', async (event, folderPath, fileName) => {
+    try {
+      const fullPath = join(folderPath, fileName) // Folder aur file name ko jodkar pura rasta banayega
+      const content = fs.readFileSync(fullPath, 'utf-8') // 'utf' format text read karne ke liye hota hai
+      return content
+    } catch (error) {
+      console.error("File content read error:", error);
+      return "Error: file is not loaded."
+      
+    }
   })
 
   // IPC test
